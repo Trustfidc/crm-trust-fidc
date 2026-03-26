@@ -1187,17 +1187,11 @@ async function enviarParaTercon(recordId, numeroProcesso, nomeCedente) {
     linkDrive = data.fields?.['Link Drive'] || '';
   } catch(e) {}
 
-  // Disparar webhook Make primeiro (independente do status)
+  // Disparar webhook Make (query params — compatível com no-cors/GitHub Pages)
   const WEBHOOK_TERCON = 'https://hook.us2.make.com/kqqk27x4kayeviovqplrgqzeupagb019';
-  let webhookOk = false;
   try {
-    const wr = await fetch(WEBHOOK_TERCON, {
-      method: 'POST',
-      mode: 'no-cors',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({ recordId, numeroProcesso, nomeCedente, linkDrive, acao: 'enviar_tercon' })
-    });
-    webhookOk = true;
+    const params = new URLSearchParams({ recordId, numeroProcesso, nomeCedente, linkDrive });
+    await fetch(`${WEBHOOK_TERCON}?${params.toString()}`, { method: 'GET', mode: 'no-cors' });
   } catch(e) {}
 
   // Atualizar status no Airtable
