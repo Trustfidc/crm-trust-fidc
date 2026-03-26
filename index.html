@@ -1187,7 +1187,7 @@ async function enviarParaTercon(recordId, numeroProcesso, nomeCedente, advogado,
   // Atualizar status no Airtable
   const ok = await atualizarStatusContrato(recordId, 'Aguardando Gestora');
   if (ok) {
-    await loadData();
+    await loadAllData();
     renderContratos();
   } else {
     btn.disabled = false; btn.textContent = '📤 Enviar para Tercon';
@@ -1196,7 +1196,7 @@ async function enviarParaTercon(recordId, numeroProcesso, nomeCedente, advogado,
 
 async function voltarRascunho(recordId) {
   const ok = await atualizarStatusContrato(recordId, 'Rascunho');
-  if (ok) { await loadData(); renderContratos(); }
+  if (ok) { await loadAllData(); renderContratos(); }
 }
 
 async function limineAprovou(recordId, numeroProcesso, nomeCedente) {
@@ -1214,7 +1214,7 @@ async function limineAprovou(recordId, numeroProcesso, nomeCedente) {
         body: JSON.stringify({ recordId, numeroProcesso, nomeCedente, acao: 'aprovar_zapsign' })
       });
     } catch(e) { /* webhook opcional por enquanto */ }
-    await loadData();
+    await loadAllData();
     renderContratos();
   } else {
     btn.disabled = false; btn.textContent = '✅ Limine Aprovou';
