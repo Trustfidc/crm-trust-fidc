@@ -1193,7 +1193,8 @@ async function enviarParaTercon(recordId, numeroProcesso, nomeCedente) {
     try {
       await fetch(WEBHOOK_TERCON, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'text/plain' },
         body: JSON.stringify({ recordId, numeroProcesso, nomeCedente, linkDrive, acao: 'enviar_tercon' })
       });
     } catch(e) {}
