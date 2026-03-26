@@ -1187,22 +1187,32 @@ async function enviarParaTercon(recordId, numeroProcesso, nomeCedente) {
     linkDrive = data.fields?.['Link Drive'] || '';
   } catch(e) {}
 
+  // Disparar webhook Make primeiro (independente do status)
+  const WEBHOOK_TERCON = 'https://hook.us2.make.com/kqqk27x4kayeviovqplrgqzeupagb019';
+  let webhookOk = false;
+  try {
+    const wr = await fetch(WEBHOOK_TERCON, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ recordId, numeroProcesso, nomeCedente, linkDrive, acao: 'enviar_tercon' })
+    });
+    webhookOk = true;
+  } catch(e) {}
+
+  // Atualizar status no Airtable
   const ok = await atualizarStatusContrato(recordId, 'Aguardando Gestora');
   if (ok) {
-    const WEBHOOK_TERCON = 'https://hook.us2.make.com/kqqk27x4kayeviovqplrgqzeupagb019';
-    try {
-      await fetch(WEBHOOK_TERCON, {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify({ recordId, numeroProcesso, nomeCedente, linkDrive, acao: 'enviar_tercon' })
-      });
-    } catch(e) {}
     await loadData();
     renderContratos();
   } else {
     btn.disabled = false; btn.textContent = '📤 Enviar para Tercon';
   }
+}
+
+async function voltarRascunho(recordId) {
+  const ok = await atualizarStatusContrato(recordId, 'Rascunho');
+  if (ok) { await loadData(); renderContratos(); }
 }
 
 async function limineAprovou(recordId, numeroProcesso, nomeCedente) {
@@ -1583,6 +1593,12 @@ function renderContratos(search = '') {
               botoesHtml = `<button id="btn-limine-${r.id}" onclick="limineAprovou('${r.id}', '${processo.replace(/'/g,"\\'")}', '${cedente.replace(/'/g,"\\'")}' )"
                 style="background:#065f46;color:#fff;border:none;border-radius:6px;padding:5px 10px;font-size:11px;cursor:pointer;white-space:nowrap">
                 ✅ Limine Aprovou</button>`;
+            }
+            // Botão voltar rascunho (para testes)
+            if (status !== 'Rascunho' && status !== 'No ZapSign' && status !== 'Assinado') {
+              botoesHtml += ` <button onclick="voltarRascunho('${r.id}')"
+                style="background:#374151;color:#9ca3af;border:none;border-radius:6px;padding:5px 8px;font-size:10px;cursor:pointer;white-space:nowrap">
+                ↩ Rascunho</button>`;
             }
 
             return `<tr>
