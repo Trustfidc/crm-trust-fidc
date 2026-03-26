@@ -1177,33 +1177,10 @@ async function enviarParaTercon(recordId, numeroProcesso, nomeCedente, advogado,
   const btn = document.getElementById('btn-tercon-' + recordId);
   btn.disabled = true; btn.textContent = '⏳ Enviando...';
 
-  // Buscar dados do Pipeline (advogado, tipo crédito, link Drive) via linked record
-  let linkDrive = '';
-  let advogadoReal = advogado;
-  let tipoCreditoReal = tipoCredito;
-  try {
-    // Buscar registro de Contratos para pegar o ID do Pipeline linkado
-    const resC = await fetch(`https://api.airtable.com/v0/appY2qUys6YGaAVTO/tblZrqNzFOaiFUKWq/${recordId}`, {
-      headers: { 'Authorization': `Bearer ${AT_TOKEN}` }
-    });
-    const dataC = await resC.json();
-    const pipelineIds = dataC.fields?.['Pipeline'] || [];
-    if (pipelineIds.length > 0) {
-      const resP = await fetch(`https://api.airtable.com/v0/appY2qUys6YGaAVTO/tbliDFGyTzHGBcKWn/${pipelineIds[0]}`, {
-        headers: { 'Authorization': `Bearer ${AT_TOKEN}` }
-      });
-      const dataP = await resP.json();
-      linkDrive = dataP.fields?.['Link Drive'] || '';
-      advogadoReal = dataP.fields?.['Nome do Advogado'] || advogado;
-      const tc = dataP.fields?.['Tipo de Crédito'];
-      tipoCreditoReal = Array.isArray(tc) ? tc.join(', ') : (tc || tipoCredito);
-    }
-  } catch(e) {}
-
-  // Disparar webhook Make (query params — compatível com no-cors/GitHub Pages)
+  // Disparar webhook Make — Make busca todos os dados no Airtable
   const WEBHOOK_TERCON = 'https://hook.us2.make.com/kqqk27x4kayeviovqplrgqzeupagb019';
   try {
-    const params = new URLSearchParams({ recordId, numeroProcesso, nomeCedente, advogado: advogadoReal, tipoCredito: tipoCreditoReal, linkDrive });
+    const params = new URLSearchParams({ recordId });
     await fetch(`${WEBHOOK_TERCON}?${params.toString()}`, { method: 'GET', mode: 'no-cors' });
   } catch(e) {}
 
