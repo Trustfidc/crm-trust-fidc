@@ -1175,18 +1175,28 @@ async function atualizarStatusContrato(recordId, novoStatus) {
 async function enviarParaTercon(recordId, numeroProcesso, nomeCedente) {
   if (!confirm(`Confirma envio para Tercon?\nProcesso: ${numeroProcesso}\nCedente: ${nomeCedente}`)) return;
   const btn = document.getElementById('btn-tercon-' + recordId);
-  btn.disabled = true; btn.textContent = 'Enviando...';
+  btn.disabled = true; btn.textContent = '⏳ Enviando...';
+
+  // Buscar link Drive do registro no Airtable
+  let linkDrive = '';
+  try {
+    const res = await fetch(`https://api.airtable.com/v0/appY2qUys6YGaAVTO/tblZrqNzFOaiFUKWq/${recordId}`, {
+      headers: { 'Authorization': `Bearer ${AT_TOKEN}` }
+    });
+    const data = await res.json();
+    linkDrive = data.fields?.['Link Drive'] || '';
+  } catch(e) {}
+
   const ok = await atualizarStatusContrato(recordId, 'Aguardando Gestora');
   if (ok) {
-    // Webhook Make — dispara email para Tercon
-    const WEBHOOK_TERCON = 'WEBHOOK_TERCON_URL'; // substituir pelo webhook real
+    const WEBHOOK_TERCON = 'https://hook.us2.make.com/kqqk27x4kayeviovqplrgqzeupagb019';
     try {
       await fetch(WEBHOOK_TERCON, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ recordId, numeroProcesso, nomeCedente, acao: 'enviar_tercon' })
+        body: JSON.stringify({ recordId, numeroProcesso, nomeCedente, linkDrive, acao: 'enviar_tercon' })
       });
-    } catch(e) { /* webhook opcional por enquanto */ }
+    } catch(e) {}
     await loadData();
     renderContratos();
   } else {
