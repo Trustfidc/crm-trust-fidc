@@ -1202,23 +1202,28 @@ async function voltarRascunho(recordId) {
 async function limineAprovou(recordId, numeroProcesso, nomeCedente) {
   if (!confirm(`Confirma que a Administradora (Limine) aprovou?\nProcesso: ${numeroProcesso}\nCedente: ${nomeCedente}`)) return;
   const btn = document.getElementById('btn-limine-' + recordId);
-  btn.disabled = true; btn.textContent = 'Processando...';
-  const ok = await atualizarStatusContrato(recordId, 'Aguardando Administradora');
-  if (ok) {
-    // Webhook Make — dispara ZapSign
-    const WEBHOOK_ZAPSIGN = 'WEBHOOK_ZAPSIGN_URL'; // substituir pelo webhook real
-    try {
-      await fetch(WEBHOOK_ZAPSIGN, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ recordId, numeroProcesso, nomeCedente, acao: 'aprovar_zapsign' })
-      });
-    } catch(e) { /* webhook opcional por enquanto */ }
-    await loadAllData();
-    renderContratos();
-  } else {
-    btn.disabled = false; btn.textContent = '✅ Limine Aprovou';
-  }
+  btn.disabled = true; btn.textContent = '⏳ Processando...';
+
+  // Buscar pipelineId do contrato
+  let pipelineId = '';
+  try {
+    const res = await fetch(`https://api.airtable.com/v0/appY2qUys6YGaAVTO/tblZrqNzFOaiFUKWq/${recordId}`, {
+      headers: { 'Authorization': `Bearer ${AT_TOKEN}` }
+    });
+    const data = await res.json();
+    const pipelineIds = data.fields?.['Pipeline'] || [];
+    pipelineId = pipelineIds[0] || '';
+  } catch(e) {}
+
+  // Disparar webhook Make → ZapSign
+  const WEBHOOK_ZAPSIGN = 'https://hook.us2.make.com/vycsrqib7qc8rlacy8sw8pgqx2m1wpv5';
+  try {
+    const params = new URLSearchParams({ recordId, pipelineId });
+    await fetch(`${WEBHOOK_ZAPSIGN}?${params.toString()}`, { method: 'GET', mode: 'no-cors' });
+  } catch(e) {}
+
+  await loadAllData();
+  renderContratos();
 }
 
 function getInitials(name) {
