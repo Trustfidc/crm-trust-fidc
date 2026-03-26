@@ -1172,7 +1172,7 @@ async function atualizarStatusContrato(recordId, novoStatus) {
   }
 }
 
-async function enviarParaTercon(recordId, numeroProcesso, nomeCedente) {
+async function enviarParaTercon(recordId, numeroProcesso, nomeCedente, advogado, tipoCredito) {
   if (!confirm(`Confirma envio para Tercon?\nProcesso: ${numeroProcesso}\nCedente: ${nomeCedente}`)) return;
   const btn = document.getElementById('btn-tercon-' + recordId);
   btn.disabled = true; btn.textContent = '⏳ Enviando...';
@@ -1190,7 +1190,7 @@ async function enviarParaTercon(recordId, numeroProcesso, nomeCedente) {
   // Disparar webhook Make (query params — compatível com no-cors/GitHub Pages)
   const WEBHOOK_TERCON = 'https://hook.us2.make.com/kqqk27x4kayeviovqplrgqzeupagb019';
   try {
-    const params = new URLSearchParams({ recordId, numeroProcesso, nomeCedente, linkDrive });
+    const params = new URLSearchParams({ recordId, numeroProcesso, nomeCedente, advogado, tipoCredito, linkDrive });
     await fetch(`${WEBHOOK_TERCON}?${params.toString()}`, { method: 'GET', mode: 'no-cors' });
   } catch(e) {}
 
@@ -1576,11 +1576,13 @@ function renderContratos(search = '') {
             const status = f['Status Contrato'] || 'Rascunho';
             const processo = f['Número do Processo'] || '—';
             const cedente = f['Nome Cedente'] || '—';
+            const advogado = f['Nome Advogado'] || f['Nome do Advogado'] || '—';
+            const tipoCredito = Array.isArray(f['Tipo de Crédito']) ? f['Tipo de Crédito'].join(', ') : (f['Tipo de Crédito'] || '—');
 
             // Botões conforme status
             let botoesHtml = '';
             if (status === 'Rascunho') {
-              botoesHtml = `<button id="btn-tercon-${r.id}" onclick="enviarParaTercon('${r.id}', '${processo.replace(/'/g,"\\'")}', '${cedente.replace(/'/g,"\\'")}' )"
+              botoesHtml = `<button id="btn-tercon-${r.id}" onclick="enviarParaTercon('${r.id}', '${processo.replace(/'/g,"\\'")}', '${cedente.replace(/'/g,"\\'")}', '${advogado.replace(/'/g,"\\'")}', '${tipoCredito.replace(/'/g,"\\'")}' )"
                 style="background:#1e40af;color:#fff;border:none;border-radius:6px;padding:5px 10px;font-size:11px;cursor:pointer;white-space:nowrap">
                 📤 Enviar para Tercon</button>`;
             } else if (status === 'Aguardando Administradora') {
